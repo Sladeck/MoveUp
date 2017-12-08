@@ -95,6 +95,41 @@ export default {
         */
     },
 
+    findVideo() {
+      document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', true);
+		//call ajax find room
+		document.getElementById('#videosFound').html('')
+		$.ajax({
+			type: "POST",
+			url: "http://localhost:3001/music/search/youtube",
+			data: {
+				name: document.getElementsByTagName('input[name="musicName"]').value,
+				jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNWExNThiOGJhYzU1OTYxMTgxZmEzNzFjIiwiaWF0IjoxNTExMzYxNDE5fQ.AoYpb1iqRGeFUAJM4-36zV9psX0xtwDbBbINhlxgTsQ",
+			},
+			success: function(data) {
+				if(data.code == 201) {
+					for (var i = 0; i < data.data.length; i++) {
+						// video[data.data[i].id] = {
+						// 	id: data.data[i].id,
+						// 	title: data.data[i].title,
+						// 	channel: data.data[i].channelTitle,
+						// }
+						document.getElementsById('#videosFound').append(returnVideos(data.data[i].title, data.data[i].channelTitle, data.data[i].thumbnails.high.url, data.data[i].id))
+						document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', false);
+					}
+				} else {
+					console.log(data)
+					document.getElementsById('#videosFound').html('<div>Nothing here</div>')
+				}
+			},
+			error: function(data) {
+				console.log(data)
+				document.getElementsById('#videosFound').html('<div>Error</div>')
+			},
+			dataType: "json"
+		});
+    }
+
     addMusic() {
       this.$socket.emit('addMusic', obj);
   		document.getElementById('#videosFound').html('');
