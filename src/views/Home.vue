@@ -98,7 +98,7 @@ export default {
     findVideo() {
       document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', true);
 		//call ajax find room
-		document.getElementsById('#videosFound').html('')
+		document.getElementById('#videosFound').html('')
 		$.ajax({
 			type: "POST",
 			url: "http://localhost:3001/music/search/youtube",
@@ -114,17 +114,17 @@ export default {
 						// 	title: data.data[i].title,
 						// 	channel: data.data[i].channelTitle,
 						// }
-						document.getElementsById('#videosFound').append(returnVideos(data.data[i].title, data.data[i].channelTitle, data.data[i].thumbnails.high.url, data.data[i].id))
+						document.getElementById('#videosFound').append(returnVideos(data.data[i].title, data.data[i].channelTitle, data.data[i].thumbnails.high.url, data.data[i].id))
 						document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', false);
 					}
 				} else {
 					console.log(data)
-					document.getElementsById('#videosFound').html('<div>Nothing here</div>')
+					document.getElementById('#videosFound').html('<div>Nothing here</div>')
 				}
 			},
 			error: function(data) {
 				console.log(data)
-				document.getElementsById('#videosFound').html('<div>Error</div>')
+				document.getElementById('#videosFound').html('<div>Error</div>')
 			},
 			dataType: "json"
 		});
