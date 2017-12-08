@@ -98,7 +98,7 @@ export default {
     findVideo() {
       document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', true);
 		//call ajax find room
-		document.getElementById('#videosFound').html('')
+		document.getElementsById('#videosFound').html('')
 		$.ajax({
 			type: "POST",
 			url: "http://localhost:3001/music/search/youtube",
