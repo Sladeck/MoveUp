@@ -8,7 +8,7 @@ import 'vue-awesome/icons'
 import Icon from 'vue-awesome/components/Icon.vue'
 
 Vue.use(VueRouter)
-Vue.use(VueSocketIO, "http://localhost:3008");
+Vue.use(VueSocketIO, "http://localhost:3001");
 Vue.component('icon', Icon)
 
 

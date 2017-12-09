@@ -1,19 +1,15 @@
 require('colors');
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 
-app.use(express.static(__dirname + '/'));
-
-app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
-});
+const roomController = require('./controllers/room.controller');
+const musicController = require('./controllers/music.controller');
 
 var roomsList = {}
-
-//NOTE: APPEL API POUR ENREGISTRER UNE MUSIC DANS LA ROOM QUAND LA MUSIC SE JOUE DANS LE PLAYER
 
 //      actual model room
 // {
@@ -43,6 +39,7 @@ var roomsList = {}
 */
 
 io.sockets.on('connection', function (socket) {
+    console.log("hey")
 	socket.on('joinRoom', function(data) {
 		if (data.username !== socket.username) {
             socket.username = data.username;
@@ -130,7 +127,7 @@ io.sockets.on('connection', function (socket) {
 	});
 });
 
-var port = process.env.PORT || 3008;
+var port = process.env.PORT || 3001;
 
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -144,7 +141,17 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json());     // to support JSON-encoded bodies
 
-http.listen(port, function(){
-    const message = 'Socket server on http://localhost:' + port;
-    console.log(message.bgGreen+"\n");
-})
+mongoose.Promise = global.Promise
+
+mongoose
+    .connect('mongodb://localhost:27017/moveup', {useMongoClient:true})
+    .then( () => console.log("Connected to MongoDB".bgGreen+"\n") )
+    .then(http.listen(port, function(){
+        const message = 'Socket server on http://localhost:' + port;
+        console.log(message.bgGreen+"\n");
+    }))
+    .catch(err => console.log(err.message.red))
+
+app.post('/room/create', roomController.create)
+app.post('/room/get', roomController.getRooms)
+app.post('/music/search/youtube', musicController.searchYoutube)

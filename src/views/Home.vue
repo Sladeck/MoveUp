@@ -2,21 +2,24 @@
   <main id="home-view">
         <h1>Find a room</h1>
 
-        <form name="findRoom">
-            <input type="text" name="roomName" placeholder="NAME OF THE ROOM">
-            <input type="submit" name="submit" value="Search this room">
+        <form name="findRoom" @submit.prevent>
+            <input type="text" name="roomName" placeholder="NAME OF THE ROOM" v-model="roomName">
+            <input type="submit" name="submit" v-on:click="searchRoom(roomName)"  value="Search this room">
         </form>
 
-        <div id="findRoom" style="margin-top: 10px"></div>
+        <div id="findRoom" style="margin-top: 10px">
+          <room-card :roomslist="roomslist" v-for="room in roomslist"></room-card>
+          <!--<user-card :user="user" v-for="(user, index) in filteredUsers" :key="user.id" /> -->
+        </div>
 
         <hr style="margin-bottom: 50px;">
 
         <div style="vertical-align:top;display:inline-block;overflow:scroll-y;padding:10px;">
         	<div id="conversation"></div>
             <div id="musicBlock" style="display:none">
-                <form name="findMusic">
-                    <input type="text" name="musicName" placeholder="NAME OF THE MUSIC">
-                    <input type="submit" name="submit" class="btn" value="Search this music">
+                <form name="findMusic" @submit.prevent>
+                    <input type="text" name="musicName" placeholder="NAME OF THE MUSIC" v-model="musicName">
+                    <input type="submit" name="submit" class="btn" v-on:click="findMusic(musicName)" value="Search this music">
                 </form>
                 <div id="videosFound" style="margin-top: 80px;"></div>
             </div>
@@ -35,10 +38,88 @@
 
 <script>
 import axios         from 'axios'
+import RoomCard from './roomCard.vue'
 
 export default {
+
   name: 'home-view',
+
+  components: { RoomCard },
+
+  data () {
+    return {
+      roomName: '',
+      musicName: '',
+      roomslist: [],
+      nickname: '',
+      usersList: [],
+    }
+  },
+
+  sockets: {
+    connect: function(){
+      this.$socket.on('connect', function() {
+        console.log("Connected successfully to the room");
+      })
+    },
+    getUsersList: function(){
+      this.$socket.on('get-users-list', function(value){
+        console.log(value)
+        usersList = value
+      });
+    }
+  },
+
   methods: {
+    searchRoom: function(nickname) {
+      /*function renderJoin(id, name) {
+        return `
+        <form name="joinRoom" @submit.prevent>
+            <div>${name}</div>
+            <input type="submit" name="submit" v-on:click="joinRoom('hi','hi')" value="Join this room">
+        </form>
+        `
+      };*/
+      $('#findRoom').html('')
+      $.ajax({
+        type: "POST",
+        url: "http://localhost:3001/room/get",
+        data: {
+          name: nickname,
+        },
+        success: function(data) {
+          if(data.code == 203) {
+            this.roomslist = []
+            for (var i = 0; i < data.data.length; i++) {
+              var test = data.data[i]
+              this.roomslist.push({test})
+              //$('#findRoom').append(renderJoin(data.data[i]._id, data.data[i].name))
+              //$('#findRoom').append('<div><div>'+data.data[i].name+'</div><a href="#" v-on:click="joinRoom(\''+data.data[i]._id+'\',\''+data.data[i].name+'\')">Join</a></div>')
+            }
+            console.log(this.roomslist);
+          } else {
+            $('#findRoom').html('<div>Nothing here</div>')
+          }
+        },
+        error: function(data) {
+          $('#findRoom').html('<div>Error</div>')
+        },
+        dataType: "json"
+      });
+    },
+    joinRoom: function(roomId, roomName) {
+      console.log("here")
+      this.$socket.emit('joinRoom', {username: username, roomId: roomId, roomName: roomName});
+      $('#roomName').html('<div>'+roomName+'</div>');
+      $('#quitRoom, #musicBlock, #chat').css('display', 'block');
+      $('form[name="findRoom"]').css('display','none');
+      $('#findRoom').html('');
+    }
+  },
+
+}
+
+  /*methods: {
 
     returnVideos(title, channelTitle, url, id) {
       return `
@@ -61,16 +142,16 @@ export default {
 
     disconnect() {
       this.$socket.emit('disconnectRoom');
-      document.getElementById('#conversation, #roomName, #users').html('');
-  		document.getElementById('#quitRoom').css('display','none');
-  		document.getElementById('form[name="findRoom"]').css('display','block');
-  		document.getElementById('#musicBlock').css('display','none');
+      $('#conversation, #roomName, #users').html('');
+  		$('#quitRoom').css('display','none');
+  		$('form[name="findRoom"]').css('display','block');
+  		$('#musicBlock').css('display','none');
       console.log("Disconnected from the room");
     },
 
     findRoom() {
-      /*
-      document.getElementById('#findRoom').html('')
+
+      $('#findRoom').html('')
         $.ajax({
           type: "POST",
           url: "http://localhost:3001/room/get",
@@ -81,71 +162,71 @@ export default {
           success: function(data) {
             if(data.code == 203) {
               for (var i = 0; i < data.data.length; i++) {
-                document.getElementById('#findRoom').append('<div><div>'+data.data[i].name+'</div><a href="#" onclick="joinRoom(\''+data.data[i]._id+'\',\''+data.data[i].name+'\')">Join</a></div>')
+                $('#findRoom').append('<div><div>'+data.data[i].name+'</div><a href="#" onclick="joinRoom(\''+data.data[i]._id+'\',\''+data.data[i].name+'\')">Join</a></div>')
               }
             } else {
-              document.getElementById('#findRoom').html('<div>Nothing here</div>')
+              $('#findRoom').html('<div>Nothing here</div>')
             }
           },
           error: function(data) {
-            document.getElementById('#findRoom').html('<div>Error</div>')
+            $('#findRoom').html('<div>Error</div>')
           },
           dataType: "json"
         });
-        */
+
     },
 
     findVideo() {
-      document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', true);
+    $('form[name="findMusic"] input[type="submit"]').prop('disabled', true);
 		//call ajax find room
-		document.getElementById('#videosFound').html('')
-		$.ajax({
-			type: "POST",
-			url: "http://localhost:3001/music/search/youtube",
-			data: {
-				name: document.getElementsByTagName('input[name="musicName"]').value,
-				jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNWExNThiOGJhYzU1OTYxMTgxZmEzNzFjIiwiaWF0IjoxNTExMzYxNDE5fQ.AoYpb1iqRGeFUAJM4-36zV9psX0xtwDbBbINhlxgTsQ",
-			},
-			success: function(data) {
-				if(data.code == 201) {
-					for (var i = 0; i < data.data.length; i++) {
-						// video[data.data[i].id] = {
-						// 	id: data.data[i].id,
-						// 	title: data.data[i].title,
-						// 	channel: data.data[i].channelTitle,
-						// }
-						document.getElementsById('#videosFound').append(returnVideos(data.data[i].title, data.data[i].channelTitle, data.data[i].thumbnails.high.url, data.data[i].id))
-						document.getElementsByTagName('form[name="findMusic"] input[type="submit"]').prop('disabled', false);
-					}
-				} else {
-					console.log(data)
-					document.getElementsById('#videosFound').html('<div>Nothing here</div>')
-				}
-			},
-			error: function(data) {
-				console.log(data)
-				document.getElementsById('#videosFound').html('<div>Error</div>')
-			},
-			dataType: "json"
-		});
-    }
+		$('#videosFound').html('')
+    $.ajax({
+      type: "POST",
+      url: "http://localhost:3001/music/search/youtube",
+      data: {
+        name: document.getElementsByTagName('input[name="musicName"]').value,
+        jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoiNWExNThiOGJhYzU1OTYxMTgxZmEzNzFjIiwiaWF0IjoxNTExMzYxNDE5fQ.AoYpb1iqRGeFUAJM4-36zV9psX0xtwDbBbINhlxgTsQ",
+      },
+      success: function(data) {
+        if(data.code == 201) {
+          for (var i = 0; i < data.data.length; i++) {
+            // video[data.data[i].id] = {
+            // 	id: data.data[i].id,
+            // 	title: data.data[i].title,
+            // 	channel: data.data[i].channelTitle,
+            // }
+            $('#videosFound').append(returnVideos(data.data[i].title, data.data[i].channelTitle, data.data[i].thumbnails.high.url, data.data[i].id))
+            $('form[name="findMusic"] input[type="submit"]').prop('disabled', false);
+          }
+        } else {
+          console.log(data)
+          $('#videosFound').html('<div>Nothing here</div>')
+        }
+      },
+      error: function(data) {
+        console.log(data)
+        $('#videosFound').html('<div>Error</div>')
+      },
+      dataType: "json"
+    });
+  },
 
     addMusic() {
       this.$socket.emit('addMusic', obj);
-  		document.getElementById('#videosFound').html('');
-  		document.getElementsByTagName('input[name="musicName"]').value;
+  		$('#videosFound').html('');
+  		$('input[name="musicName"]').value;
     },
 
     updateChat() {
       this.$socket.on("updatechat", function(username, data) {
-        document.getElementById("#conversation").append('<b>'+username+':</b> '+data+'<br />');
+        $("#conversation").append('<b>'+username+':</b> '+data+'<br />');
       })
     },
 
     userList() {
       this.$socket.on("user-list", function(userList) {
         console.log(usersList);
-        document.getElementById('#users').html('<div>'+usersList+'</div>');
+        $('#users').html('<div>'+usersList+'</div>');
       })
     },
 
@@ -153,14 +234,14 @@ export default {
       this.$socket.on("playlist-list", function(playlist) {
         $('#playlist').html("")
     		for(var i = 0; i < playlist.length; i++) {
-    			document.getElementById('#playlist').append(`<div>${playlist[i].title}</div>`)
+    			$('#playlist').append(`<div>${playlist[i].title}</div>`)
     		}
       })
-    }
+    },
 
   }
 }
-/*
+
 
 // when the client clicks SEND
 	$('#datasend').click(function() {
@@ -192,8 +273,8 @@ document.getElementById('#addMusic').addEventListener('click' ,function() {
 		this.$socket.emit('addMusic', obj);
 		document.getElementById('#videosFound').html('');
 		document.getElementById('input[name="musicName"]').value;
-	});
-*/
+	});*/
+
 </script>
 
 <style lang="css">
